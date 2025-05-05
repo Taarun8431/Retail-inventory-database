@@ -12,5 +12,5 @@ A scalable and efficient inventory management system designed to handle stock, s
 
 View detailed reports and summaries
 
-git clone https://github.com/yourusername/retail-inventory-database.git
+git clone https://github.com/Taarun8431/retail-inventory-database.git
 
