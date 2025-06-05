@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kormangala Branch - Retail Nexus</title>
+  <link rel="stylesheet" href="branch-common.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">Retail Nexus</div>
+    <ul class="nav-links">
+      <li class="dropdown">
+        <a href="#" class="dropdown-toggle">Branches ▾</a>
+        <ul class="dropdown-menu">
+          <li><a href="branch1.html" class="active">Kormangala</a></li>
+          <li><a href="branch2.html">Jayanagar</a></li>
+          <li><a href="branch3.html">Yelahanka</a></li>
+        </ul>
+      </li>
+      <li><a href="total-inventory.html">Total Inventory</a></li>
+      <li><a href="analytics.html">Analytics</a></li>
+      <li><a href="sales.html">Sales</a></li>
+    </ul>
+  </nav>
+
+  <main class="branch-container">
+    <header class="branch-header">
+      <h1>Kormangala Branch</h1>
+      <div class="branch-info">
+        <div class="info-item">
+          <strong>Address</strong>
+          <p> Kormangala</p>
+        </div>
+        <div class="info-item">
+          <strong>Manager</strong>
+          <p>Tarun KB</p>
+        </div>
+        <div class="info-item">
+          <strong>Inventory Status</strong>
+          <p>Medium</p>
+        </div>
+        <div class="info-item">
+          <strong>Last Audit</strong>
+          <p>May 15, 2025</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="products-section">
+      <div class="section-header">
+        <h2>Available Products</h2>
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Search products...">
+          <i class="search-icon">🔍</i>
+        </div>
+      </div>
+      <div class="product-grid" id="productGrid">
+        <!-- Products will be dynamically loaded here -->
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:3000/api';
+    const branchId = "branch1";
+
+    // Function to create product card
+    function createProductCard(product) {
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <h3>${product.product_name}</h3>
+        <p class="product-id">ID: ${product.product_id}</p>
+        <p class="product-price">₹${product.price}</p>
+        <p class="product-quantity">Available: ${product.quantity}</p>
+        <button class="action-btn add-inventory-btn" onclick="handleInventoryAction('add', '${product.product_id}', '${product.product_name}')">
+          Add to Inventory
+        </button>
+        <button class="action-btn remove-inventory-btn" onclick="handleInventoryAction('remove', '${product.product_id}', '${product.product_name}')">
+          Remove from Inventory
+        </button>
+        <span class="product-status"></span>
+      `;
+      return card;
+    }
+
+    // Function to handle inventory actions
+    async function handleInventoryAction(action, productId, productName) {
+      const statusElement = event.target.parentElement.querySelector('.product-status');
+      try {
+        const endpoint = action === 'add' ? '/inventory/add' : '/inventory/remove';
+        const method = action === 'add' ? 'POST' : 'DELETE';
+        
+        statusElement.textContent = 'Processing...';
+        statusElement.className = 'product-status processing';
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            branchId,
+            productId,
+            productName
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        statusElement.textContent = data.message;
+        statusElement.className = 'product-status success';
+        
+        // Refresh inventory state
+        loadInventoryState();
+      } catch (error) {
+        console.error('Error:', error);
+        statusElement.textContent = error.message;
+        statusElement.className = 'product-status error';
+      }
+    }
+
+    // Function to load inventory state
+    async function loadInventoryState() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/inventory/${branchId}`);
+        if (!response.ok) throw new Error('Failed to fetch inventory');
+        const products = await response.json();
+        
+        const productGrid = document.getElementById('productGrid');
+        productGrid.innerHTML = '';
+        
+        if (!products || products.length === 0) {
+          productGrid.innerHTML = '<div class="no-products">No products available in this branch</div>';
+          return;
+        }
+
+        products.forEach(product => {
+          const productCard = createProductCard(product);
+          productGrid.appendChild(productCard);
+        });
+      } catch (error) {
+        console.error('Error loading inventory:', error);
+        showError('Failed to load inventory data');
+      }
+    }
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      const products = document.querySelectorAll('.product-card');
+      
+      products.forEach(product => {
+        const text = product.textContent.toLowerCase();
+        product.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    });
+
+    // Error handling
+    function showError(message) {
+      const productGrid = document.getElementById('productGrid');
+      productGrid.innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadInventoryState();
+    });
+  </script>
+</body>
+</html>

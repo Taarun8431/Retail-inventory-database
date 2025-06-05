@@ -1,0 +1,20 @@
+{
+  "name": "retail-nexus-backend",
+  "version": "1.0.0",
+  "description": "Backend for Retail Nexus inventory management",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "mysql2": "^3.14.1",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

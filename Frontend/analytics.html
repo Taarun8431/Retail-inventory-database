@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analytics | Retail Nexus</title>
+  <link rel="stylesheet" href="analytics.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">Retail Nexus</div>
+    <ul class="nav-links">
+      <li class="dropdown">
+        <a href="#" class="dropdown-toggle">Branches ▾</a>
+        <ul class="dropdown-menu">
+          <li><a href="branch1.html">Kormangala</a></li>
+          <li><a href="branch2.html">Jayanagar</a></li>
+          <li><a href="branch3.html">Yelahanka</a></li>
+        </ul>
+      </li>
+      <li><a href="total-inventory.html">Total Inventory</a></li>
+      <li><a href="analytics.html" class="active">Analytics</a></li>
+      <li><a href="sales.html">Sales</a></li>
+    </ul>
+  </nav>
+
+  <main class="analytics-container">
+    <h1>Analytics Dashboard</h1>
+
+    <div class="charts-grid">
+      <!-- Total Inventory Chart -->
+      <div class="chart-card">
+        <h2>Total Inventory Overview</h2>
+        <canvas id="inventoryChart"></canvas>
+      </div>
+
+      <!-- Branch-wise Inventory -->
+      <div class="chart-card">
+        <h2>Branch-wise Inventory</h2>
+        <canvas id="branchInventoryChart"></canvas>
+      </div>
+
+      <!-- Product Distribution -->
+      <div class="chart-card">
+        <h2>Product Distribution</h2>
+        <canvas id="productDistributionChart"></canvas>
+      </div>
+
+      <!-- Inventory Trends -->
+      <div class="chart-card">
+        <h2>Inventory Trends</h2>
+        <canvas id="inventoryTrendsChart"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE_URL = 'http://localhost:3000/api';
+    const socket = io('http://localhost:3000');
+
+    let inventoryChart, branchInventoryChart, productDistributionChart, inventoryTrendsChart;
+    let lastUpdateTime = new Date();
+
+    // Generate random data for demonstration
+    function generateRandomData() {
+      return {
+        totalInventory: Math.floor(Math.random() * 1000) + 500,
+        branchData: {
+          'Kormangala': Math.floor(Math.random() * 300) + 100,
+          'Jayanagar': Math.floor(Math.random() * 300) + 100,
+          'Yelahanka': Math.floor(Math.random() * 300) + 100
+        },
+        productData: [
+          { name: 'Herbal Shampoo', quantity: Math.floor(Math.random() * 200) + 50 },
+          { name: 'Rice Bag', quantity: Math.floor(Math.random() * 150) + 30 },
+          { name: 'Washing Powder', quantity: Math.floor(Math.random() * 180) + 40 },
+          { name: 'Cooking Oil', quantity: Math.floor(Math.random() * 120) + 20 }
+        ]
+      };
+    }
+
+    // Initialize charts
+    function initializeCharts() {
+      // Total Inventory Chart
+      const inventoryCtx = document.getElementById('inventoryChart').getContext('2d');
+      inventoryChart = new Chart(inventoryCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Total Stock'],
+          datasets: [{
+            label: 'Total Inventory',
+            data: [0],
+            backgroundColor: '#4CAF50',
+            borderColor: '#45a049',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Quantity'
+              }
+            }
+          }
+        }
+      });
+
+      // Branch-wise Inventory Chart
+      const branchCtx = document.getElementById('branchInventoryChart').getContext('2d');
+      branchInventoryChart = new Chart(branchCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Kormangala', 'Jayanagar', 'Yelahanka'],
+          datasets: [{
+            data: [0, 0, 0],
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+          }]
+        },
+        options: {
+          responsive: true
+        }
+      });
+
+      // Product Distribution Chart
+      const productCtx = document.getElementById('productDistributionChart').getContext('2d');
+      productDistributionChart = new Chart(productCtx, {
+        type: 'doughnut',
+        data: {
+          labels: [],
+          datasets: [{
+            data: [],
+            backgroundColor: [
+              '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'
+            ]
+          }]
+        },
+        options: {
+          responsive: true
+        }
+      });
+
+      // Inventory Trends Chart
+      const trendsCtx = document.getElementById('inventoryTrendsChart').getContext('2d');
+      inventoryTrendsChart = new Chart(trendsCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Total Inventory Trend',
+            data: [],
+            borderColor: '#4CAF50',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // Update all charts with new data
+    function updateCharts(data) {
+      // Update Total Inventory Chart
+      inventoryChart.data.datasets[0].data = [data.totalInventory];
+      inventoryChart.update();
+
+      // Update Branch-wise Inventory Chart
+      branchInventoryChart.data.datasets[0].data = [
+        data.branchData['Kormangala'],
+        data.branchData['Jayanagar'],
+        data.branchData['Yelahanka']
+      ];
+      branchInventoryChart.update();
+
+      // Update Product Distribution Chart
+      productDistributionChart.data.labels = data.productData.map(p => p.name);
+      productDistributionChart.data.datasets[0].data = data.productData.map(p => p.quantity);
+      productDistributionChart.update();
+
+      // Update Inventory Trends Chart
+      const now = new Date();
+      const timeLabel = now.toLocaleTimeString();
+      
+      inventoryTrendsChart.data.labels.push(timeLabel);
+      inventoryTrendsChart.data.datasets[0].data.push(data.totalInventory);
+
+      // Keep only last 10 data points
+      if (inventoryTrendsChart.data.labels.length > 10) {
+        inventoryTrendsChart.data.labels.shift();
+        inventoryTrendsChart.data.datasets[0].data.shift();
+      }
+
+      inventoryTrendsChart.update();
+    }
+
+    // Function to update data every minute
+    function startDataUpdates() {
+      setInterval(() => {
+        const newData = generateRandomData();
+        updateCharts(newData);
+        lastUpdateTime = new Date();
+      }, 60000); // Update every minute
+    }
+
+    // Socket.IO event handlers
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      const initialData = generateRandomData();
+      updateCharts(initialData);
+    });
+
+    socket.on('inventoryUpdated', () => {
+      console.log('Inventory update received');
+      const newData = generateRandomData();
+      updateCharts(newData);
+    });
+
+    // Initialize charts and start updates
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeCharts();
+      const initialData = generateRandomData();
+      updateCharts(initialData);
+      startDataUpdates();
+    });
+  </script>
+</body>
+</html> 

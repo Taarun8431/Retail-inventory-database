@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Retail Nexus - Enterprise Inventory Management</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fas fa-store"></i>
+                <span>Retail Nexus</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <a href="index.html">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fas fa-building"></i>
+                        <span>Branches</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="branch1.html">Kormangala</a></li>
+                        <li><a href="branch2.html">Indiranagar</a></li>
+                        <li><a href="branch3.html">Jayanagar</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="total-inventory.html">
+                        <i class="fas fa-boxes"></i>
+                        <span>Total Inventory</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="analytics.html">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="sales.html">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>Sales</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search inventory, products, or branches...">
+                </div>
+                <div class="user-menu">
+                    <i class="fas fa-bell"></i>
+                    <div class="user-profile">
+                        <img src="https://via.placeholder.com/40" alt="User Profile">
+                        <span>Admin User</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="welcome-section">
+                    <h1>Welcome to Retail Nexus</h1>
+                    <p> Inventory management system for multi-branch retail operations</p>
+                </div>
+
+                <div class="quick-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Total Products</h3>
+                            <p class="stat-number" id="totalProducts">Loading...</p>
+                            <span class="stat-change positive">+5.2% from last month</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Active Branches</h3>
+                            <p class="stat-number">3</p>
+                            <span class="stat-change">All operational</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Monthly Sales</h3>
+                            <p class="stat-number">₹2.5M</p>
+                            <span class="stat-change positive">+12.3% from last month</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Low Stock Items</h3>
+                            <p class="stat-number" id="lowStockItems">Loading...</p>
+                            <span class="stat-change negative">Requires attention</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="grid-item recent-activity">
+                        <h2>Recent Activity</h2>
+                        <div class="activity-list" id="activityList">
+                            <!-- Activity items will be dynamically added here -->
+                        </div>
+                    </div>
+
+                    <div class="grid-item quick-actions">
+                        <h2>Quick Actions</h2>
+                        <div class="action-buttons">
+                            <button class="action-btn" onclick="openAddProductModal()">
+                                <i class="fas fa-plus"></i>
+                                Add New Product
+                            </button>
+                            <button class="action-btn" onclick="exportReport()">
+                                <i class="fas fa-file-export"></i>
+                                Export Report
+                            </button>
+                            <button class="action-btn" onclick="updateInventory()">
+                                <i class="fas fa-sync"></i>
+                                Update Inventory
+                            </button>
+                            <button class="action-btn" onclick="printLabels()">
+                                <i class="fas fa-print"></i>
+                                Print Labels
+                            </button>
+                            <button class="action-btn" onclick="openUpdatePriceModal()">
+                                <i class="fas fa-tag"></i>
+                                Update Price
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+         
+        </main>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="addProductModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Product</h2>
+            <form id="addProductForm">
+                <div class="form-group">
+                    <label for="productName">Product Name</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">Price</label>
+                    <input type="number" id="productPrice" required min="0" step="0.01">
+                </div>
+                <button type="submit" class="submit-btn">Add Product</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Update Price Modal -->
+    <div id="updatePriceModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Update Product Price</h2>
+            <form id="updatePriceForm">
+                <div class="form-group">
+                    <label for="productId">Product ID</label>
+                    <input type="text" id="productId" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPrice">New Price</label>
+                    <input type="number" id="newPrice" required min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Select Branches</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" name="branch" value="branch1" checked> Koramangala
+                        </label>
+                        <label>
+                            <input type="checkbox" name="branch" value="branch2" checked> Jayanagar
+                        </label>
+                        <label>
+                            <input type="checkbox" name="branch" value="branch3" checked> Yelahanka
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn">Update Price</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Socket.IO connection
+        const socket = io('http://localhost:3000');
+
+        // Function to fetch total products count
+        async function fetchTotalProducts() {
+            try {
+                const response = await fetch('http://localhost:3000/api/inventory/total/all');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                // Calculate total sum across all branches
+                const totalProducts = data.reduce((sum, product) => {
+                    const productTotal = product.branch_quantities.reduce((branchSum, branch) => branchSum + branch.quantity, 0);
+                    return sum + productTotal;
+                }, 0);
+                document.getElementById('totalProducts').textContent = totalProducts;
+            } catch (error) {
+                console.error('Error fetching total products:', error);
+                document.getElementById('totalProducts').textContent = 'Error';
+            }
+        }
+
+        // Function to fetch low stock items
+        async function fetchLowStockItems() {
+            try {
+                // Get inventory for all branches and check for low stock
+                const response = await fetch('http://localhost:3000/api/inventory/total/all');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                const lowStockItems = data.filter(item => 
+                    item.branch_quantities.some(bq => bq.quantity < 5)
+                );
+                document.getElementById('lowStockItems').textContent = lowStockItems.length;
+            } catch (error) {
+                console.error('Error fetching low stock items:', error);
+                document.getElementById('lowStockItems').textContent = 'Error';
+            }
+        }
+
+        // Function to update recent activity
+        async function updateRecentActivity() {
+            try {
+                // Get recent sales from all branches
+                const branches = ['branch1', 'branch2', 'branch3'];
+                const allSales = [];
+                
+                for (const branch of branches) {
+                    const response = await fetch(`http://localhost:3000/api/sales/recent/${branch}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const sales = await response.json();
+                    allSales.push(...sales);
+                }
+
+                // Sort by date and take the most recent 5
+                const recentSales = allSales
+                    .sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date))
+                    .slice(0, 5);
+
+                const activityList = document.getElementById('activityList');
+                activityList.innerHTML = recentSales.map(sale => `
+                    <div class="activity-item">
+                        <i class="fas fa-shopping-cart"></i>
+                        <div class="activity-details">
+                            <p>Sale of ${sale.product_name} at ${sale.branch_id}</p>
+                            <span>${formatTimeAgo(sale.sale_date)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error fetching recent activity:', error);
+                const activityList = document.getElementById('activityList');
+                activityList.innerHTML = '<div class="activity-item">Error loading recent activity</div>';
+            }
+        }
+
+        // Helper function to format time ago
+        function formatTimeAgo(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            
+            if (seconds < 60) return 'just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+            return `${Math.floor(seconds / 86400)} days ago`;
+        }
+
+        // Modal functionality
+        const modal = document.getElementById('addProductModal');
+        const closeBtn = document.getElementsByClassName('close')[0];
+
+        function openAddProductModal() {
+            modal.style.display = 'block';
+        }
+
+        closeBtn.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Add Product Form submission
+        document.getElementById('addProductForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const productName = document.getElementById('productName').value;
+            const productPrice = document.getElementById('productPrice').value;
+
+            try {
+                const response = await fetch('http://localhost:3000/api/total/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        product_name: productName,
+                        price: parseFloat(productPrice)
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                modal.style.display = 'none';
+                document.getElementById('addProductForm').reset();
+                
+                // Refresh the data
+                fetchTotalProducts();
+                fetchLowStockItems();
+                updateRecentActivity();
+                
+                // Show success message
+                alert('Product added successfully!');
+            } catch (error) {
+                console.error('Error adding product:', error);
+                alert('Error adding product: ' + error.message);
+            }
+        });
+
+        // Socket.IO event listeners
+        socket.on('inventoryUpdated', () => {
+            fetchTotalProducts();
+            fetchLowStockItems();
+            updateRecentActivity();
+        });
+
+        // Initial data load
+        fetchTotalProducts();
+        fetchLowStockItems();
+        updateRecentActivity();
+
+        // Other button functions
+        function exportReport() {
+            // For now, just show a message
+            alert('Export functionality will be implemented soon');
+        }
+
+        function updateInventory() {
+            fetchTotalProducts();
+            fetchLowStockItems();
+            updateRecentActivity();
+        }
+
+        function printLabels() {
+            // For now, just show a message
+            alert('Print labels functionality will be implemented soon');
+        }
+
+        // Update Price Modal functionality
+        const updatePriceModal = document.getElementById('updatePriceModal');
+        const updatePriceCloseBtn = updatePriceModal.getElementsByClassName('close')[0];
+
+        function openUpdatePriceModal() {
+            updatePriceModal.style.display = 'block';
+        }
+
+        updatePriceCloseBtn.onclick = function() {
+            updatePriceModal.style.display = 'none';
+        }
+
+        // Update Price Form submission
+        document.getElementById('updatePriceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const productId = document.getElementById('productId').value;
+            const newPrice = document.getElementById('newPrice').value;
+            const selectedBranches = Array.from(document.querySelectorAll('input[name="branch"]:checked'))
+                .map(checkbox => checkbox.value);
+
+            try {
+                const response = await fetch('http://localhost:3000/api/inventory/update-branch-prices', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        productId,
+                        newPrice: parseFloat(newPrice),
+                        branches: selectedBranches
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                updatePriceModal.style.display = 'none';
+                document.getElementById('updatePriceForm').reset();
+                
+                // Refresh the data
+                fetchTotalProducts();
+                fetchLowStockItems();
+                updateRecentActivity();
+                
+                // Show success message
+                alert('Product price updated successfully for selected branches!');
+            } catch (error) {
+                console.error('Error updating product price:', error);
+                alert('Error updating product price: ' + error.message);
+            }
+        });
+    </script>
+
+    <style>
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+        }
+
+        .submit-btn {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+    </style>
+</body>
+</html>
